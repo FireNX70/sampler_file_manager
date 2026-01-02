@@ -1,0 +1,44 @@
+Linux
+	Dependencies
+		1. A toolchain. I've been using GCC, Clang should work but I haven't
+		   tested.
+		2. CMake.
+		3. Make.
+		4. Qt6.
+
+		On Debian, this can be installed with
+		"apt-get install gcc cmake qt6-base-dev".
+
+	Building
+		From the project's root run:
+			cmake -DCMAKE_BUILD_TYPE="Release" -B build
+			cd build
+			make -j $(nproc)
+
+Windows
+	Use MSYS2 https://www.msys2.org/. Specifically, MSYS2 MINGW64.
+
+	Dependencies
+		1. A toolchain. I've been using GCC.
+		2. CMake.
+		3. Ninja.
+		4. Qt6.
+		5. Qt6 tools.
+
+		On MSYS2, this can be installed with
+		"pacman -S mingw-w64-x86_64-{gcc,cmake,qt6-base,qt6-tools}"
+
+	Building
+		For the first step (cmake), you'll likely get an error about symlinks.
+		Running MSYS2 as admin, as much as I dislike that option, gets rid of
+		that.
+
+		The last step will also print a bunch of errors, but you can ignore
+		those.
+
+		From the project's root run:
+			cmake -DCMAKE_BUILD_TYPE="Release" -B build
+			cd build
+			ninja
+			cd ..
+			./copy_msys_dlls.sh
