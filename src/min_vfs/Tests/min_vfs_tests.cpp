@@ -21,7 +21,7 @@
 #include "Roland/S7XX/Tests/Test_data.hpp"
 
 constexpr char BASE_TEST_FS_PATH[] = "base_test_fs.img";
-constexpr char TEST_S7XX_FS_PATH[] = "test_S7XX_fs.img";
+constexpr char TEST_S7XX_FS_PATH[] = "test_fs.img";
 constexpr char EMPTY_FILE_PATH[] = "empty_file";
 constexpr char TEST_HOST_DIR[] = "test_dir";
 constexpr char TEST_HOST_SYMLINK_TO_DIR[] = "test_dir_symlink";
@@ -49,6 +49,18 @@ static int mount_tests()
 	std::vector<min_vfs::mount_stats_t> mounts;
 	std::vector<min_vfs::map_stats_t> map_stats;
 
+	//S7XX FS setup
+	if(std::filesystem::exists(S7XX_FS_PATH))
+		std::filesystem::remove_all(S7XX_FS_PATH);
+
+	std::filesystem::copy_file(TEST_S7XX_FS_PATH, S7XX_FS_PATH);
+
+	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
+		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
+
+	std::filesystem::create_symlink(S7XX_FS_PATH, S7XX_FS_SYMLINK_PATH);
+
+	//Error tests
 	expected_err = ret_val_setup(min_vfs::LIBRARY_ID,
 								 (u8)min_vfs::ERR::NONEXISTANT_DISK);
 	err = min_vfs::mount("nx_file");
@@ -113,7 +125,7 @@ static int mount_tests()
 	}
 
 	//And another one
-	err = min_vfs::mount(TEST_S7XX_FS_PATH);
+	err = min_vfs::mount(S7XX_FS_SYMLINK_PATH);
 	if(err)
 	{
 		print_unexpected_err(err, 6);
@@ -134,7 +146,7 @@ static int mount_tests()
 
 	expected_mount =
 	{
-		.path = std::filesystem::canonical(TEST_S7XX_FS_PATH),
+		.path = std::filesystem::canonical(S7XX_FS_SYMLINK_PATH),
 		.type = "S7XX"
 	};
 
@@ -153,10 +165,10 @@ static int mount_tests()
 	//Try to mount the same one again
 	expected_err = ret_val_setup(min_vfs::LIBRARY_ID,
 								 (u8)min_vfs::ERR::ALREADY_OPEN);
-	err = min_vfs::mount(TEST_S7XX_FS_PATH);
+	err = min_vfs::mount(S7XX_FS_SYMLINK_PATH);
 	if(err != expected_err)
 	{
-		std::cerr << "Looking for: " << TEST_S7XX_FS_PATH << std::endl;
+		std::cerr << "Looking for: " << S7XX_FS_SYMLINK_PATH << std::endl;
 		std::cerr << "Mounts:" << std::endl;
 
 		min_vfs::lsmap(map_stats);
@@ -187,6 +199,15 @@ static int list_tests()
 		std::filesystem::remove_all(TEST_HOST_DIR);
 
 	std::filesystem::create_directory(TEST_HOST_DIR);
+
+	//S7XX FS setup.
+	/*Do NOT copy the actual image here, as we rely on it being mounted from the
+	 *mount tests.*/
+
+	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
+		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
+
+	std::filesystem::create_symlink(S7XX_FS_PATH, S7XX_FS_SYMLINK_PATH);
 
 	//Check host dir (just use current workdir)
 	err = Host::FS::filesystem_t::list_static(
@@ -419,7 +440,7 @@ static int list_tests()
 
 	//Check other mounted FS' root dir
 	dentries.clear();
-	err = min_vfs::list(TEST_S7XX_FS_PATH, dentries);
+	err = min_vfs::list(S7XX_FS_SYMLINK_PATH, dentries);
 	if(err)
 	{
 		print_unexpected_err(err, 32);
@@ -445,7 +466,7 @@ static int list_tests()
 
 	//Check other mounted FS' non-root dir
 	dentries.clear();
-	err = min_vfs::list((std::string(TEST_S7XX_FS_PATH) + "/"
+	err = min_vfs::list((std::string(S7XX_FS_SYMLINK_PATH) + "/"
 		+ S7XX_TEST::NATIVE_FS_DIRS::EXPECTED_ROOT_DIR[0].fname).c_str(),
 						dentries);
 	if(err)
@@ -494,6 +515,15 @@ int mkdir_tests()
 		std::filesystem::remove_all(EMU_FS_PATH);
 
 	std::filesystem::copy_file(BASE_TEST_FS_PATH, EMU_FS_PATH);
+
+	//S7XX FS setup.
+	/*Do NOT copy the actual image here, as we rely on it being mounted from the
+	 *mount tests.*/
+
+	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
+		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
+
+	std::filesystem::create_symlink(S7XX_FS_PATH, S7XX_FS_SYMLINK_PATH);
 
 	//Host FS
 	err = min_vfs::mkdir(MKDIR_TEST_DIRNAME);
@@ -582,7 +612,7 @@ int mkdir_tests()
 	}
 
 	//S7XX FS
-	path = std::string(TEST_S7XX_FS_PATH) + "/" + MKDIR_TEST_DIRNAME;
+	path = std::string(S7XX_FS_SYMLINK_PATH) + "/" + MKDIR_TEST_DIRNAME;
 	expected_err = ret_val_setup(min_vfs::LIBRARY_ID,
 								 (u8)min_vfs::ERR::UNSUPPORTED_OPERATION);
 	err = min_vfs::mkdir(path.c_str());
@@ -602,18 +632,15 @@ int umount_tests()
 	std::vector<min_vfs::mount_stats_t> mounts, expected_mounts;
 
 	//S7XX FS setup
-	if(std::filesystem::exists(S7XX_FS_PATH))
-		std::filesystem::remove_all(S7XX_FS_PATH);
-
-	std::filesystem::copy_file(std::filesystem::read_symlink(TEST_S7XX_FS_PATH),
-							   S7XX_FS_PATH);
+	/*Do NOT copy the actual image here, as we rely on it being mounted from the
+	 *mount tests.*/
 
 	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
 		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
 
 	std::filesystem::create_symlink(S7XX_FS_PATH, S7XX_FS_SYMLINK_PATH);
 
-	err = min_vfs::mount(S7XX_FS_SYMLINK_PATH);
+	err = min_vfs::mount(TEST_S7XX_FS_PATH);
 	if(err)
 	{
 		print_unexpected_err(err, 48);
@@ -708,8 +735,7 @@ int trunc_tests()
 	if(std::filesystem::exists(S7XX_FS_PATH))
 		std::filesystem::remove_all(S7XX_FS_PATH);
 
-	std::filesystem::copy_file(std::filesystem::read_symlink(TEST_S7XX_FS_PATH),
-							   S7XX_FS_PATH);
+	std::filesystem::copy_file(TEST_S7XX_FS_PATH, S7XX_FS_PATH);
 
 	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
 			std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
@@ -895,8 +921,7 @@ int remove_tests()
 	if(std::filesystem::exists(S7XX_FS_PATH))
 		std::filesystem::remove_all(S7XX_FS_PATH);
 
-	std::filesystem::copy_file(std::filesystem::read_symlink(TEST_S7XX_FS_PATH),
-							   S7XX_FS_PATH);
+	std::filesystem::copy_file(TEST_S7XX_FS_PATH, S7XX_FS_PATH);
 
 	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
 		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
@@ -1068,8 +1093,7 @@ int fopen_tests()
 	if(std::filesystem::exists(S7XX_FS_PATH))
 		std::filesystem::remove_all(S7XX_FS_PATH);
 
-	std::filesystem::copy_file(std::filesystem::read_symlink(TEST_S7XX_FS_PATH),
-							   S7XX_FS_PATH);
+	std::filesystem::copy_file(TEST_S7XX_FS_PATH, S7XX_FS_PATH);
 
 	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
 		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
@@ -1300,8 +1324,7 @@ int read_tests()
 	if(std::filesystem::exists(S7XX_FS_PATH))
 		std::filesystem::remove_all(S7XX_FS_PATH);
 
-	std::filesystem::copy_file(std::filesystem::read_symlink(TEST_S7XX_FS_PATH),
-							   S7XX_FS_PATH);
+	std::filesystem::copy_file(TEST_S7XX_FS_PATH, S7XX_FS_PATH);
 
 	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
 		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
@@ -1461,8 +1484,7 @@ int write_tests()
 	if(std::filesystem::exists(S7XX_FS_PATH))
 		std::filesystem::remove_all(S7XX_FS_PATH);
 
-	std::filesystem::copy_file(std::filesystem::read_symlink(TEST_S7XX_FS_PATH),
-							   S7XX_FS_PATH);
+	std::filesystem::copy_file(TEST_S7XX_FS_PATH, S7XX_FS_PATH);
 
 	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
 		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
@@ -1697,8 +1719,7 @@ int trunc_open_tests()
 	if(std::filesystem::exists(S7XX_FS_PATH))
 		std::filesystem::remove_all(S7XX_FS_PATH);
 
-	std::filesystem::copy_file(std::filesystem::read_symlink(TEST_S7XX_FS_PATH),
-							   S7XX_FS_PATH);
+	std::filesystem::copy_file(TEST_S7XX_FS_PATH, S7XX_FS_PATH);
 
 	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
 		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
@@ -1897,8 +1918,7 @@ int umount_open_tests()
 	if(std::filesystem::exists(S7XX_FS_PATH))
 		std::filesystem::remove_all(S7XX_FS_PATH);
 
-	std::filesystem::copy_file(std::filesystem::read_symlink(TEST_S7XX_FS_PATH),
-							   S7XX_FS_PATH);
+	std::filesystem::copy_file(TEST_S7XX_FS_PATH, S7XX_FS_PATH);
 
 	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
 		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
@@ -2030,8 +2050,7 @@ int rename_tests()
 	if(std::filesystem::exists(S7XX_FS_PATH))
 		std::filesystem::remove_all(S7XX_FS_PATH);
 
-	std::filesystem::copy_file(std::filesystem::read_symlink(TEST_S7XX_FS_PATH),
-							   S7XX_FS_PATH);
+	std::filesystem::copy_file(TEST_S7XX_FS_PATH, S7XX_FS_PATH);
 
 	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
 		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);
@@ -2509,8 +2528,7 @@ int rename_open_tests()
 	if(std::filesystem::exists(S7XX_FS_PATH))
 		std::filesystem::remove_all(S7XX_FS_PATH);
 
-	std::filesystem::copy_file(std::filesystem::read_symlink(TEST_S7XX_FS_PATH),
-							   S7XX_FS_PATH);
+	std::filesystem::copy_file(TEST_S7XX_FS_PATH, S7XX_FS_PATH);
 
 	if(std::filesystem::exists(S7XX_FS_SYMLINK_PATH))
 		std::filesystem::remove_all(S7XX_FS_SYMLINK_PATH);

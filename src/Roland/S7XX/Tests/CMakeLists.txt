@@ -46,7 +46,10 @@ target_link_libraries(
 		S7XX_FS_test_helpers
 )
 
-file(COPY Data/test_fs.img DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+#CMake (at least as of 3.31.6) fails to extract raw xz files, so I had to shove
+#the S7XX test filesystem image in a tar.
+file(ARCHIVE_EXTRACT INPUT ${CMAKE_CURRENT_SOURCE_DIR}/Data/test_fs.img.tar.xz
+	DESTINATION ${CMAKE_CURRENT_BINARY_DIR} VERBOSE)
 file(COPY Data/ref_host_fs DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_test(S7XX_FS_tests S7XX_FS_tests)
