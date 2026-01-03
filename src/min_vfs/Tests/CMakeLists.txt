@@ -24,5 +24,8 @@ target_link_libraries(
 
 add_test(min_vfs_tests min_vfs_tests)
 
-file(COPY Data/base_test_fs.img FOLLOW_SYMLINK_CHAIN DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY Data/test_S7XX_fs.img FOLLOW_SYMLINK_CHAIN DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY Data/base_test_fs.img FOLLOW_SYMLINK_CHAIN DESTINATION
+	${CMAKE_CURRENT_BINARY_DIR})
+file(REAL_PATH Data/test_S7XX_fs.img.tar.xz actual_S7XX_img_path)
+file(ARCHIVE_EXTRACT INPUT ${actual_S7XX_img_path} DESTINATION
+	${CMAKE_CURRENT_BINARY_DIR})

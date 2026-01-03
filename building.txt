@@ -18,6 +18,10 @@ Linux
 Windows
 	Use MSYS2 https://www.msys2.org/. Specifically, MSYS2 MINGW64.
 
+	Cloning
+		When cloning, you should use git clone's -c option and set the
+		core.symlinks variable to true (git clone -c core.symlinks=true).
+
 	Dependencies
 		1. A toolchain. I've been using GCC.
 		2. CMake.
@@ -29,9 +33,11 @@ Windows
 		"pacman -S mingw-w64-x86_64-{gcc,cmake,qt6-base,qt6-tools}"
 
 	Building
-		For the first step (cmake), you'll likely get an error about symlinks.
-		Running MSYS2 as admin, as much as I dislike that option, gets rid of
-		that.
+		For the first step (cmake), you may get an error about symlinks
+		(depending on your Windows, MSYS2 and git settings).
+		If you encounter that error; running MSYS2 as admin, as much as I
+		dislike that option, gets rid of that. A better option might be to
+		enable Windows' Developer mode.
 
 		The last step will also print a bunch of errors, but you can ignore
 		those.
