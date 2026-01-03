@@ -20,6 +20,10 @@ target_link_libraries(
 		qt_misc
 )
 
+if(WIN32)
+	set_target_properties(sampler_file_manager PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
+
 add_subdirectory(Utils)
 add_subdirectory(min_vfs)
 add_subdirectory(Host_FS)
