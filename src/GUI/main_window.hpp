@@ -132,11 +132,12 @@ private:
 	bool filename_entry_dialog(const QString &text_init, QString &res);
 
 	QString get_err_msg(const u16 err);
-	void error_msg(const QString &op_name, const std::filesystem::path &path,
-				   const u16 err);
-	void error_msg(const QString &op_name,
-				   const std::filesystem::path &src_path,
-				   const std::filesystem::path &dst_path, const u16 err);
+	QString compose_err_msg(const std::filesystem::path &path, const u16 err);
+	QString compose_err_msg(const std::filesystem::path &src_path,
+							const std::filesystem::path &dst_path,
+							const u16 err);
+
+	void error_msg(const QString &op_name, const QString &msg);
 };
 
 #endif
