@@ -267,21 +267,6 @@ void start_task(main_window_t &main_window, const bool interruptible, F &&f,
 	thread_it->mtx.unlock();
 }
 
-typedef std::filesystem::path (*get_dst_path_f)(const std::filesystem::path&,
-												const std::filesystem::path&);
-
-std::filesystem::path get_workpath_only(const std::filesystem::path &workpath,
-										const std::filesystem::path &fname)
-{
-	return workpath;
-}
-
-std::filesystem::path get_full_dst_path(const std::filesystem::path &workpath,
-										const std::filesystem::path &fname)
-{
-	return workpath / fname;
-}
-
 typedef u16 (*copy_or_rename_f)(std::filesystem::path, std::filesystem::path);
 
 void main_window_t::paste_op()
