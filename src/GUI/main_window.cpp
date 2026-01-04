@@ -4,6 +4,10 @@
 #include <list>
 #include <functional>
 
+#if _WIN32
+	#include <algorithm>
+#endif
+
 #include <QMessageBox>
 #include <QAction>
 #include <QStandardPaths>
@@ -72,6 +76,20 @@ void main_window_t::cd(const std::filesystem::path &new_path,
 	if(update_history) dir_history.fwd(workpath);
 }
 
+#if _WIN32
+std::string replace_win_path_separators(const std::filesystem::path &path)
+{
+	std::string tgt_path_str = path.string();
+	std::replace(tgt_path_str.begin(), tgt_path_str.end(), '\\', '/');
+	return tgt_path_str;
+}
+
+void replace_win_path_separators(std::string &path_str)
+{
+	std::replace(path_str.begin(), path_str.end(), '\\', '/');
+}
+#endif
+
 void main_window_t::toolbar_setup()
 {
 	toolbar = new QToolBar(/*top_widget*/);
@@ -93,7 +111,13 @@ void main_window_t::toolbar_setup()
 	connect(cur_path_disp, &QLineEdit::editingFinished, this,
 	[this]()
 	{
-		cd(cur_path_disp->text().toStdString());
+		#if _WIN32
+			std::string path_str = cur_path_disp->text().toStdString();
+			replace_win_path_separators(path_str);
+			cd(path_str);
+		#else
+			cd(cur_path_disp->text().toStdString());
+		#endif
 	});
 
 	/*While QToolButton::setArrowType exists, the arrows used by that are
@@ -535,7 +559,13 @@ void main_window_t::setup_cur_dir_list_ctx_menu()
 				cur_dir_list->selectionModel()->selectedIndexes()[0].row()];
 
 			if(dentry.ftype == min_vfs::ftype_t::dir)
-				cd(workpath / dentry.fname);
+			{
+				#if _WIN32
+					cd(workpath.string() + "/" + dentry.fname);
+				#else
+					cd(workpath / dentry.fname);
+				#endif
+			}
 		}
 	});
 
@@ -665,7 +695,14 @@ void main_window_t::cur_dir_list_setup()
 	{
 		const min_vfs::dentry_t &dentry = min_vfs_model.get_dir()[index.row()];
 
-		if(dentry.ftype == min_vfs::ftype_t::dir) cd(workpath / dentry.fname);
+		if(dentry.ftype == min_vfs::ftype_t::dir)
+		{
+			#if _WIN32
+				cd(workpath.string() + "/" + dentry.fname);
+			#else
+				cd(workpath / dentry.fname);
+			#endif
+		}
 	});
 
 	setup_cur_dir_list_ctx_menu();
@@ -679,7 +716,8 @@ void main_window_t::cur_dir_list_setup()
 		selected_files = false;
 		selected_dirs = false;
 
-		for(const QModelIndex index: cur_dir_list->selectionModel()->selectedIndexes())
+		for(const QModelIndex index:
+			cur_dir_list->selectionModel()->selectedIndexes())
 		{
 			const min_vfs::dentry_t dentry = min_vfs_model.get_dir()[index.row()];
 
@@ -792,7 +830,14 @@ void main_window_t::fs_list_setup()
 	[this](const QModelIndex &index)
 	{
 		if(index.isValid())
-			cd(fs_list_model.get_fs_stats()[index.row()].path);
+		{
+			#if _WIN32
+				cd(replace_win_path_separators(
+					fs_list_model.get_fs_stats()[index.row()].path));
+			#else
+				cd(fs_list_model.get_fs_stats()[index.row()].path);
+			#endif
+		}
 	});
 
 	fs_list_ctx_menu_setup();
@@ -812,7 +857,14 @@ void main_window_t::fs_list_setup()
 }
 
 main_window_t::main_window_t(): QMainWindow(),
-	dir_history(std::filesystem::current_path())
+	dir_history
+	(
+		#if _WIN32
+			replace_win_path_separators(std::filesystem::current_path())
+		#else
+			std::filesystem::current_path()
+		#endif
+	)
 {
 	top_widget = new QWidget();
 	top_vbox = new QVBoxLayout(top_widget);
@@ -854,7 +906,12 @@ main_window_t::main_window_t(): QMainWindow(),
 	left_vbox->addWidget(dir_list);
 	left_vbox->addWidget(fs_list);
 
-	cd(std::filesystem::current_path(), false);
+	#if _WIN32
+		cd(replace_win_path_separators(std::filesystem::current_path()), false);
+	#else
+		cd(std::filesystem::current_path(), false);
+	#endif
+
 	setCentralWidget(top_widget);
 	show();
 }
