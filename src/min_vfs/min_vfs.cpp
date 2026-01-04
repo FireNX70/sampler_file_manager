@@ -42,7 +42,8 @@ namespace min_vfs
 	 *using std::string for keys in a bunch of maps).*/
 
 	typedef std::list<std::unique_ptr<filesystem_t>> fs_list_t;
-	typedef std::unordered_map<std::filesystem::path, fs_list_t::iterator> fs_map_t;
+	typedef std::unordered_map<std::filesystem::path, fs_list_t::iterator>
+		fs_map_t;
 
 	std::shared_mutex mounts_mtx;
 
@@ -76,9 +77,8 @@ namespace min_vfs
 	fs_map_t::iterator find_fs(std::filesystem::path path,
 							   std::filesystem::path &remainder)
 	{
-		static const std::filesystem::path::string_type SEPARATOR_AS_STRING =
-			std::filesystem::path::string_type(
-				1, std::filesystem::path::preferred_separator);
+		constexpr std::filesystem::path::value_type SEPARATOR_AS_STRING[] =
+			{'/', '\0'}; //Can't use a string literal because Windows
 
 		size_t og_path_off;
 
