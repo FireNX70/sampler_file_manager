@@ -320,7 +320,7 @@ void main_window_t::paste_op()
 			const std::filesystem::path src_path = CONCAT_PATHS(src_dir, fname);
 			const u16 err = copy_or_rename(src_path, tgt_dir);
 
-			if(err) error_msg(tr("Paste"), src_path, err);
+			if(err) error_msg(tr("Paste"), src_path, tgt_dir, err);
 			else
 			{
 				if(this->workpath == tgt_dir) this->refresh.trigger();
@@ -403,7 +403,7 @@ void main_window_t::error_msg(const QString &op_name,
 							  const std::filesystem::path &path, const u16 err)
 {
 	/*Can't create children from a different thread, gotta do it with
-	 * signals. Wait, could I get rid of the proxy by making the signal part
+	 *signals. Wait, could I get rid of the proxy by making the signal part
 	 *of main_window_t?*/
 	task_msg_proxy_t msg_proxy;
 
@@ -417,6 +417,34 @@ void main_window_t::error_msg(const QString &op_name,
 							   + QString::fromStdString("\n\n") + tr("Path: ")
 							   + QString::fromStdString(
 								   path.string()));
+
+	disconnect(&msg_proxy, &task_msg_proxy_t::req_msg_box, this,
+			   &main_window_t::spawn_msg_box);
+	return;
+}
+
+void main_window_t::error_msg(const QString &op_name,
+							  const std::filesystem::path &src_path,
+							  const std::filesystem::path &dst_path,
+							  const u16 err)
+{
+	/*Can't create children from a different thread, gotta do it with
+	 *signals. Wait, could I get rid of the proxy by making the signal part
+	 *of main_window_t?*/
+	task_msg_proxy_t msg_proxy;
+
+	//Apparently connect() and disconnect() are thread-safe, so fuck it.
+	connect(&msg_proxy, &task_msg_proxy_t::req_msg_box, this,
+			&main_window_t::spawn_msg_box);
+
+	emit msg_proxy.req_msg_box(QMessageBox::Warning,
+							   op_name + QString(' ') + tr("failed"),
+							   get_err_msg(err)
+							   + QString::fromStdString("\n\n") + tr("Source: ")
+							   + QString::fromStdString(src_path.string())
+							   + QString::fromStdString("\n\n")
+							   + tr("Destination: ")
+							   + QString::fromStdString(dst_path.string()));
 
 	disconnect(&msg_proxy, &task_msg_proxy_t::req_msg_box, this,
 			   &main_window_t::spawn_msg_box);
@@ -609,7 +637,7 @@ void main_window_t::setup_cur_dir_list_ctx_menu()
 			dst_path = CONCAT_PATHS(this->workpath, res.toStdString())](void)
 		{
 			const u16 err = min_vfs::rename(cur_path, dst_path);
-			if(err) error_msg(tr("Rename"), cur_path, err);
+			if(err) error_msg(tr("Rename"), cur_path, dst_path, err);
 			else this->refresh.trigger();
 		});
 	});

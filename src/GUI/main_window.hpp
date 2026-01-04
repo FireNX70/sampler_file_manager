@@ -134,6 +134,9 @@ private:
 	QString get_err_msg(const u16 err);
 	void error_msg(const QString &op_name, const std::filesystem::path &path,
 				   const u16 err);
+	void error_msg(const QString &op_name,
+				   const std::filesystem::path &src_path,
+				   const std::filesystem::path &dst_path, const u16 err);
 };
 
 #endif
