@@ -391,6 +391,9 @@ QString main_window_t::get_err_msg(const u16 err)
 		case ret_val_setup(min_vfs::LIBRARY_ID, (u8)min_vfs::ERR::NOT_A_DIR):
 			return tr("Not a directory.");
 
+		case ret_val_setup(min_vfs::LIBRARY_ID, (u8)min_vfs::ERR::INVALID_PATH):
+			return tr("Invalid path.");
+
 		default:
 			return tr("min_vfs error: 0x") + QString::number(err, 16).toUpper();
 	}
