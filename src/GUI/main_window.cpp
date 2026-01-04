@@ -28,6 +28,18 @@
 #include "Roland/S5XX/S5XX_FS_drv.hpp"
 #include "Roland/S7XX/S7XX_FS_drv.hpp"
 
+#if _WIN32
+	std::filesystem::path concat_path_func(const std::filesystem::path &A,
+										   const std::filesystem::path &B)
+	{
+		return A.string() + "/" + B.string();
+	}
+
+	#define CONCAT_PATHS(A, B) concat_path_func(A, B)
+#else
+	#define CONCAT_PATHS(A, B) A / B
+#endif
+
 void main_window_t::spawn_msg_box(QMessageBox::Icon icon, const QString &title,
 						const QString &text,
 						QMessageBox::StandardButtons buttons,
@@ -305,9 +317,10 @@ void main_window_t::paste_op()
 		[this, src_dir = *to_copy.begin(), tgt_dir = this->workpath,
 				   copy_or_rename, fname = *to_copy_it]()
 		{
-			const u16 err = copy_or_rename(src_dir / fname, tgt_dir);
+			const std::filesystem::path src_path = CONCAT_PATHS(src_dir, fname);
+			const u16 err = copy_or_rename(src_path, tgt_dir);
 
-			if(err) error_msg(tr("Paste"), src_dir / fname, err);
+			if(err) error_msg(tr("Paste"), src_path, err);
 			else
 			{
 				if(this->workpath == tgt_dir) this->refresh.trigger();
@@ -335,9 +348,10 @@ void main_window_t::remove_op()
 		[this, index, tgt_dir = this->workpath,
 			fname = min_vfs_model.get_dir()[index.row()].fname]()
 		{
-			const u16 err = min_vfs::remove(workpath / fname);
+			const std::filesystem::path tgt_path = CONCAT_PATHS(workpath, fname);
+			const u16 err = min_vfs::remove(tgt_path);
 
-			if(err) error_msg(tr("Remove"), workpath / fname, err);
+			if(err) error_msg(tr("Remove"), tgt_path, err);
 			else
 			{
 				if(this->workpath == tgt_dir) this->refresh.trigger();
@@ -444,8 +458,8 @@ void main_window_t::mkfs_op()
 			const mkfs_params_t mkfs_params = mkfs_dialog.params();
 
 			start_task(*this, true,
-			[this, mkfs_params, path = workpath /
-				min_vfs_model.get_dir()[index.row()].fname]()
+			[this, mkfs_params, path = CONCAT_PATHS(workpath,
+				min_vfs_model.get_dir()[index.row()].fname)]()
 			{
 				u16 err;
 
@@ -465,8 +479,8 @@ void main_window_t::fsck_op()
 		cur_dir_list->selectionModel()->selectedIndexes())
 	{
 		start_task(*this, true,
-		[this, path = workpath /
-				min_vfs_model.get_dir()[index.row()].fname]()
+		[this, path = CONCAT_PATHS(workpath,
+			min_vfs_model.get_dir()[index.row()].fname)]()
 		{
 			const u16 err = min_vfs::fsck(path);
 
@@ -544,13 +558,7 @@ void main_window_t::setup_cur_dir_list_ctx_menu()
 				cur_dir_list->selectionModel()->selectedIndexes()[0].row()];
 
 			if(dentry.ftype == min_vfs::ftype_t::dir)
-			{
-				#if _WIN32
-					cd(workpath.string() + "/" + dentry.fname);
-				#else
-					cd(workpath / dentry.fname);
-				#endif
-			}
+				cd(CONCAT_PATHS(workpath, dentry.fname));
 		}
 	});
 
@@ -563,7 +571,7 @@ void main_window_t::setup_cur_dir_list_ctx_menu()
 		if(!filename_entry_dialog<false>(QString(), res)) return;
 
 		start_task(*this, false,
-		[this, dir_path = this->workpath / res.toStdString()]()
+		[this, dir_path = CONCAT_PATHS(this->workpath, res.toStdString())]()
 		{
 			const u16 err = min_vfs::mkdir(dir_path);
 			if(err)
@@ -594,8 +602,8 @@ void main_window_t::setup_cur_dir_list_ctx_menu()
 			return;
 
 		start_task(*this, false,
-		[this, cur_path = this->workpath / cur_fname,
-			dst_path = this->workpath / res.toStdString()](void)
+		[this, cur_path = CONCAT_PATHS(this->workpath, cur_fname),
+			dst_path = CONCAT_PATHS(this->workpath, res.toStdString())](void)
 		{
 			const u16 err = min_vfs::rename(cur_path, dst_path);
 			if(err) error_msg(tr("Rename"), cur_path, err);
@@ -653,8 +661,8 @@ void main_window_t::setup_cur_dir_list_ctx_menu()
 			cur_dir_list->selectionModel()->selectedIndexes())
 		{
 			start_task(*this, true,
-			[this,
-				path = workpath / min_vfs_model.get_dir()[index.row()].fname]()
+			[this, path = CONCAT_PATHS(workpath,
+				min_vfs_model.get_dir()[index.row()].fname)]()
 			{
 				try_mount(path);
 			});
@@ -682,11 +690,7 @@ void main_window_t::cur_dir_list_setup()
 
 		if(dentry.ftype == min_vfs::ftype_t::dir)
 		{
-			#if _WIN32
-				cd(workpath.string() + "/" + dentry.fname);
-			#else
-				cd(workpath / dentry.fname);
-			#endif
+			cd(CONCAT_PATHS(workpath, dentry.fname));
 		}
 	});
 
