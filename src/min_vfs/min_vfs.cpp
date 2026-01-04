@@ -15,6 +15,7 @@
 #include "Utils/str_util.hpp"
 #include "Utils/utils.hpp"
 #include "min_vfs_base.hpp"
+#include "path_concat_helpers.hpp"
 #include "min_vfs.hpp"
 #include "Host_FS/host_drv.hpp"
 #include "E-MU/EMU_FS_drv.hpp"
@@ -101,7 +102,7 @@ namespace min_vfs
 
 		for(size_t i = 1; i < split_path.size(); i++)
 		{
-			path_copy /= split_path[i];
+			CONCAT_ASSIGN_PATH(path_copy, split_path[i]);
 			og_path_off += 1 + split_path[i].length();
 
 			if(std::filesystem::exists(path_copy)
@@ -552,7 +553,7 @@ namespace min_vfs
 		std::vector<min_vfs::dentry_t> dentries;
 
 		if(!renamed)
-			dst_path /= src_path.filename();
+			CONCAT_ASSIGN_PATH(dst_path, src_path.filename());
 
 		dst_fs->mtx.lock();
 		err = dst_fs->list(dst_path.string().c_str(), dentries, true);
@@ -584,8 +585,8 @@ namespace min_vfs
 			}
 
 			err = copy_file_inner(src_fs, dst_fs,
-								(src_path / dentries[i].fname).string().c_str(),
-							(dst_path / dentries[i].fname).string().c_str());
+				(CONCAT_PATHS(src_path, dentries[i].fname)).string().c_str(),
+				(CONCAT_PATHS(dst_path, dentries[i].fname)).string().c_str());
 			if(err) return err;
 
 			dentries.erase(dentries.begin() + i);
@@ -632,7 +633,7 @@ namespace min_vfs
 			}
 
 			level = dir_stack_entry.level;
-			src_path = src_path / dir_stack_entry.comp;
+			CONCAT_ASSIGN_PATH(src_path, dir_stack_entry.comp);
 
 			err = copy_dir_inner(src_fs, dst_fs, src_path.string().c_str(),
 								 dst_path.string().c_str(), dir_stack, level,
@@ -643,7 +644,7 @@ namespace min_vfs
 			if(dir_stack.size())
 			{
 				if(dir_stack.top().level > level)
-					dst_path = dst_path / dir_stack_entry.comp;
+					CONCAT_ASSIGN_PATH(dst_path, dir_stack_entry.comp);
 				else src_path = src_path.parent_path();
 			}
 			else break;
@@ -727,7 +728,7 @@ namespace min_vfs
 										 (u8)min_vfs::ERR::INVALID_PATH);
 			}
 			else if(dst_dentries[0].ftype == min_vfs::ftype_t::dir)
-				final_dst_path /= src_dentries[0].fname;
+				CONCAT_ASSIGN_PATH(final_dst_path, src_dentries[0].fname);
 
 			return copy_file_inner(src_fs, dst_fs, src_path,
 								   final_dst_path.string().c_str());

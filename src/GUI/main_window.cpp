@@ -24,21 +24,10 @@
 #include "GUI/mkfs_dialog.hpp"
 #include "min_vfs/min_vfs.hpp"
 #include "min_vfs/min_vfs_base.hpp"
+#include "min_vfs/path_concat_helpers.hpp"
 #include "E-MU/EMU_FS_drv.hpp"
 #include "Roland/S5XX/S5XX_FS_drv.hpp"
 #include "Roland/S7XX/S7XX_FS_drv.hpp"
-
-#if _WIN32
-	std::filesystem::path concat_path_func(const std::filesystem::path &A,
-										   const std::filesystem::path &B)
-	{
-		return A.string() + "/" + B.string();
-	}
-
-	#define CONCAT_PATHS(A, B) concat_path_func(A, B)
-#else
-	#define CONCAT_PATHS(A, B) A / B
-#endif
 
 void main_window_t::spawn_msg_box(QMessageBox::Icon icon, const QString &title,
 						const QString &text,

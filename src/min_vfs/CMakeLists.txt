@@ -13,6 +13,10 @@ add_library(
 	min_vfs.cpp
 )
 
+if(WIN32)
+	target_sources(min_vfs PRIVATE path_concat_helpers.cpp)
+endif()
+
 target_link_libraries(
 	min_vfs
 	PUBLIC
