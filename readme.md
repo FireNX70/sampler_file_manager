@@ -10,7 +10,7 @@ does, do report it so I can try and fix it.
 ## Supported filesystems
 
 E-Mu (EIII and EIV)  
-Roland S5XX (S50, S550 and W30; both CD and HDD)  
+Roland S5XX (S550 and W30, both CD and HDD)  
 Roland S7XX  
 
 S5XX support is read-only. FSCK is only implemented for EMU and S7XX, and it's
