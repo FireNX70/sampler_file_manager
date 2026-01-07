@@ -1,6 +1,9 @@
 #include <string_view>
 #include <string>
 
+#include <QApplication>
+#include <QStyle>
+
 #include "Utils/ints.hpp"
 #include "Utils/str_util.hpp"
 #include "min_vfs_model.hpp"
@@ -107,9 +110,9 @@ QVariant min_vfs_model_t::data(const QModelIndex &index, int role) const
 			if(index.column()) return QVariant();
 
 			if(cur_dir[index.row()].ftype == min_vfs::ftype_t::dir)
-				return QIcon::fromTheme(QIcon::ThemeIcon::FolderVisiting);
+				return QApplication::style()->standardIcon(QStyle::SP_DirIcon);
 			else
-				return QIcon::fromTheme(QIcon::ThemeIcon::DocumentOpen);
+				return QApplication::style()->standardIcon(QStyle::SP_FileIcon);
 
 		default:
 			return QVariant();
