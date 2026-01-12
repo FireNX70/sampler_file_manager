@@ -16,7 +16,9 @@ Linux
 			make -j $(nproc)
 
 Windows
-	Use MSYS2 https://www.msys2.org/. Specifically, MSYS2 MINGW64.
+	Use MSYS2 https://www.msys2.org/. Specifically, MSYS2 MINGW64. You'll need a
+	version that's not too old. I tested one from July 2024 that would fail to
+	handle symlinks.
 
 	Cloning
 		When cloning, you should use git clone's -c option and set the
