@@ -1,7 +1,7 @@
 Linux
 	Dependencies
-		1. A toolchain. I've been using GCC, Clang should work but I haven't
-		   tested.
+		1. A toolchain. I've been using GCC 14. Clang 21 won't work, because it
+		   lacks std::chrono::clock_cast.
 		2. CMake.
 		3. Make.
 		4. Qt6.
